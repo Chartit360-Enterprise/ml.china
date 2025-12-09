@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
+@theme {
+  --color-red-950: #450a0a;
+  --color-red-900: #7f1d1d;
+  --color-red-600: #dc2626;
+  --color-red-500: #ef4444;
+  --color-red-400: #f87171;
+  --color-red-300: #fca5a5;
+  --color-red-200: #fecaca;
+  --color-red-50: #fef2f2;
+  --color-amber-600: #d97706;
+  --color-amber-500: #f59e0b;
+  --color-amber-400: #fbbf24;
+  --color-green-900: #14532d;
+  --color-green-500: #22c55e;
+  --color-green-400: #4ade80;
+  --color-blue-900: #1e3a8a;
+  --color-blue-400: #60a5fa;
+  --color-yellow-900: #713f12;
+  --color-yellow-400: #facc15;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0a0a12;
+  --foreground: #fef2f2;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(127, 29, 29, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.5);
+}
+
+/* Focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(220, 38, 38, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: rgba(220, 38, 38, 0.2);
+  border-radius: 9999px;
+  height: 8px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4px;
+  background: #dc2626;
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+}
+
+input[type="range"]::-moz-range-track {
+  background: rgba(220, 38, 38, 0.2);
+  border-radius: 9999px;
+  height: 8px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background: #dc2626;
+  border: none;
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+}
+
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Selection */
+::selection {
+  background: rgba(220, 38, 38, 0.3);
+  color: white;
 }
