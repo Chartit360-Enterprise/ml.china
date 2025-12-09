@@ -29,14 +29,40 @@ interface Job {
   };
 }
 
-function parseContent(content: string): Record<string, unknown> | null {
+interface ParsedPrediction {
+  quarterly_forecasts?: Array<{quarter?: string; growth?: number; confidence?: string}>;
+  gdp_growth?: number;
+  trend?: string;
+  outlook?: string;
+  summary?: string;
+  narrative?: string;
+  risks?: Array<string | {description?: string}>;
+}
+
+interface ParsedFactors {
+  factors?: Array<{name?: string; factor?: string; impact?: string; direction?: string}>;
+  summary?: string;
+  analysis?: string;
+}
+
+interface ParsedSentiment {
+  score?: number;
+  summary?: string;
+}
+
+interface ParsedSynthesis {
+  executive_summary?: string;
+  risks?: Array<string | {description?: string}>;
+}
+
+function parseContent<T = Record<string, unknown>>(content: string): T | null {
   try {
-    return JSON.parse(content);
+    return JSON.parse(content) as T;
   } catch {
     const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch) {
       try {
-        return JSON.parse(jsonMatch[1]);
+        return JSON.parse(jsonMatch[1]) as T;
       } catch {}
     }
     return null;
@@ -88,10 +114,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const outputs = job.result?.node_outputs || {};
-  const prediction = outputs.prediction?.content ? parseContent(outputs.prediction.content) : null;
-  const synthesis = outputs.synthesis?.content ? parseContent(outputs.synthesis.content) : null;
-  const sentiment = outputs.sentiment_analysis?.content ? parseContent(outputs.sentiment_analysis.content) : null;
-  const factors = outputs.factor_extraction?.content ? parseContent(outputs.factor_extraction.content) : null;
+  const prediction = outputs.prediction?.content ? parseContent<ParsedPrediction>(outputs.prediction.content) : null;
+  const synthesis = outputs.synthesis?.content ? parseContent<ParsedSynthesis>(outputs.synthesis.content) : null;
+  const sentiment = outputs.sentiment_analysis?.content ? parseContent<ParsedSentiment>(outputs.sentiment_analysis.content) : null;
+  const factors = outputs.factor_extraction?.content ? parseContent<ParsedFactors>(outputs.factor_extraction.content) : null;
 
   const isComplete = job.status === "completed";
   const isRunning = job.status === "running";
@@ -177,9 +203,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 </h2>
                 
                 {/* Quarterly forecasts */}
-                {prediction.quarterly_forecasts && Array.isArray(prediction.quarterly_forecasts) && (
+                {prediction.quarterly_forecasts && prediction.quarterly_forecasts.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                    {(prediction.quarterly_forecasts as Array<{quarter?: string; growth?: number; confidence?: string}>).map((q, i) => (
+                    {prediction.quarterly_forecasts.map((q, i) => (
                       <div key={i} className="p-3 rounded-xl bg-black/20">
                         <div className="text-xs text-white/40 mb-1">{q.quarter || `Q${i+1}`}</div>
                         <div className="text-2xl font-bold">{q.growth ? `${q.growth}%` : "N/A"}</div>
@@ -192,7 +218,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 {/* Single prediction */}
                 {prediction.gdp_growth !== undefined && !prediction.quarterly_forecasts && (
                   <div className="text-center p-4">
-                    <div className="text-4xl font-bold mb-2">{prediction.gdp_growth as number}%</div>
+                    <div className="text-4xl font-bold mb-2">{prediction.gdp_growth}%</div>
                     <div className="text-sm text-white/50">Predicted GDP Growth</div>
                   </div>
                 )}
@@ -204,13 +230,13 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                       {prediction.trend && (
                         <div className="flex-1 p-3 rounded-xl bg-black/20">
                           <div className="text-xs text-white/40 mb-1">Trend</div>
-                          <div className="font-medium capitalize">{prediction.trend as string}</div>
+                          <div className="font-medium capitalize">{prediction.trend}</div>
                         </div>
                       )}
                       {prediction.outlook && (
                         <div className="flex-1 p-3 rounded-xl bg-black/20">
                           <div className="text-xs text-white/40 mb-1">Outlook</div>
-                          <div className="font-medium capitalize">{prediction.outlook as string}</div>
+                          <div className="font-medium capitalize">{prediction.outlook}</div>
                         </div>
                       )}
                     </>
@@ -219,10 +245,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
                 {/* Narrative summary */}
                 {prediction.summary && (
-                  <p className="text-sm text-white/60 leading-relaxed">{prediction.summary as string}</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{prediction.summary}</p>
                 )}
                 {prediction.narrative && (
-                  <p className="text-sm text-white/60 leading-relaxed">{prediction.narrative as string}</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{prediction.narrative}</p>
                 )}
               </div>
             )}
@@ -234,9 +260,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <span>🔍</span> Key Factors
                   {showHelp && <span className="text-xs text-white/30 font-normal ml-2">— What&apos;s influencing GDP</span>}
                 </h3>
-                {factors.factors && Array.isArray(factors.factors) ? (
+                {factors.factors && factors.factors.length > 0 ? (
                   <div className="space-y-2">
-                    {(factors.factors as Array<{name?: string; factor?: string; impact?: string; direction?: string}>).slice(0, 5).map((f, i) => (
+                    {factors.factors.slice(0, 5).map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20">
                         <span className="text-sm">{f.name || f.factor || `Factor ${i+1}`}</span>
                         <span className={`text-xs px-2 py-0.5 rounded ${
@@ -250,7 +276,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-white/50">{String(factors.summary || factors.analysis || "Analysis complete")}</p>
+                  <p className="text-sm text-white/50">{factors.summary || factors.analysis || "Analysis complete"}</p>
                 )}
               </div>
             )}
@@ -266,19 +292,19 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   {sentiment.score !== undefined && (
                     <div className="p-3 rounded-xl bg-black/20 text-center">
                       <div className={`text-2xl font-bold ${
-                        (sentiment.score as number) > 0.3 ? "text-emerald-400" :
-                        (sentiment.score as number) < -0.3 ? "text-red-400" :
+                        sentiment.score > 0.3 ? "text-emerald-400" :
+                        sentiment.score < -0.3 ? "text-red-400" :
                         "text-amber-400"
                       }`}>
-                        {((sentiment.score as number) * 100).toFixed(0)}%
+                        {(sentiment.score * 100).toFixed(0)}%
                       </div>
                       <div className="text-xs text-white/40">
-                        {(sentiment.score as number) > 0.3 ? "Positive" : (sentiment.score as number) < -0.3 ? "Negative" : "Neutral"}
+                        {sentiment.score > 0.3 ? "Positive" : sentiment.score < -0.3 ? "Negative" : "Neutral"}
                       </div>
                     </div>
                   )}
                   {sentiment.summary && (
-                    <p className="text-sm text-white/50 flex-1">{sentiment.summary as string}</p>
+                    <p className="text-sm text-white/50 flex-1">{sentiment.summary}</p>
                   )}
                 </div>
               </div>
@@ -290,7 +316,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 <h3 className="font-medium mb-3 flex items-center gap-2">
                   <span>📋</span> Executive Summary
                 </h3>
-                <p className="text-sm text-white/60 leading-relaxed">{synthesis.executive_summary as string}</p>
+                <p className="text-sm text-white/60 leading-relaxed">{synthesis.executive_summary}</p>
               </div>
             )}
 
@@ -301,10 +327,10 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <span>⚠️</span> Key Risks
                 </h3>
                 <ul className="space-y-1">
-                  {((synthesis?.risks || prediction?.risks) as string[]).slice(0, 4).map((risk, i) => (
+                  {(synthesis?.risks || prediction?.risks || []).slice(0, 4).map((risk, i) => (
                     <li key={i} className="text-sm text-white/50 flex items-start gap-2">
                       <span className="text-red-400">•</span>
-                      {typeof risk === "string" ? risk : (risk as {description?: string}).description || JSON.stringify(risk)}
+                      {typeof risk === "string" ? risk : risk.description || JSON.stringify(risk)}
                     </li>
                   ))}
                 </ul>
