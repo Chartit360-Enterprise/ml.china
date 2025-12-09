@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-const CORRECT_PASSWORD = "Minsk2024";
-const AUTH_KEY = "china-gdp-ai-auth";
-
 export function PasswordGate({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
@@ -12,27 +9,41 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    // Check if already authenticated
-    const stored = localStorage.getItem(AUTH_KEY);
-    setAuthenticated(stored === "true");
+    // Check authentication status via server
+    fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "check" }),
+    })
+      .then((res) => res.json())
+      .then((data) => setAuthenticated(data.authenticated))
+      .catch(() => setAuthenticated(false));
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setChecking(true);
     setError(false);
 
-    // Small delay for UX
-    setTimeout(() => {
-      if (password === CORRECT_PASSWORD) {
-        localStorage.setItem(AUTH_KEY, "true");
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", password }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
         setAuthenticated(true);
       } else {
         setError(true);
         setPassword("");
       }
-      setChecking(false);
-    }, 500);
+    } catch {
+      setError(true);
+    }
+
+    setChecking(false);
   };
 
   // Loading state
@@ -111,4 +122,3 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
