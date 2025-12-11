@@ -105,32 +105,38 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const isComplete = job.status === "completed";
   const isRunning = job.status === "running" || job.status === "pending";
 
-  // Extract quarterly data from various possible structures
-  const getQuarterlyForecasts = () => {
+  // Extract quarterly forecasts
+  interface QuarterlyForecast {
+    quarter: string;
+    growth: number | undefined;
+    drivers: string[];
+    risks: string[];
+    commentary?: string;
+  }
+  
+  const getQuarterlyForecasts = (): QuarterlyForecast[] => {
     if (!prediction) return [];
     
-    // Handle nested quarterly_forecasts object
+    // Handle quarterly_forecasts object (Q1_2026, Q2_2026, etc.)
     if (prediction.quarterly_forecasts && typeof prediction.quarterly_forecasts === 'object') {
       const qf = prediction.quarterly_forecasts;
-      if (qf.Q1_2025 || qf.Q2_2025) {
-        return Object.entries(qf).map(([key, val]: [string, unknown]) => {
-          const v = val as Record<string, unknown>;
-          return {
-            quarter: key.replace('_', ' '),
-            growth: v.gdp_growth_yoy || v.growth,
-            drivers: v.key_drivers || [],
-            risks: v.risks || []
-          };
-        });
-      }
-      // Array format
-      if (Array.isArray(qf)) return qf;
+      return Object.entries(qf).map(([key, val]: [string, unknown]) => {
+        const v = val as Record<string, unknown>;
+        return {
+          quarter: key.replace(/_/g, ' '),
+          growth: (v.gdp_growth_yoy || v.growth) as number | undefined,
+          drivers: ((v.key_drivers || v.drivers || []) as string[]),
+          risks: ((v.key_risks || v.risks || []) as string[]),
+          commentary: v.commentary as string | undefined,
+        };
+      });
     }
     return [];
   };
 
   const quarterlyForecasts = getQuarterlyForecasts();
   const annualForecast = prediction?.annual_forecast;
+  const forecastYear = prediction?.forecast_year || (annualForecast?.year) || new Date().getFullYear() + 1;
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -220,20 +226,23 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                   <div className="relative">
                     <h2 className="text-xl font-semibold mb-6 flex items-center gap-3">
                       <span className="text-3xl">🎯</span> 
-                      <span>2025 GDP Growth Forecast</span>
+                      <span>{forecastYear} GDP Growth Forecast</span>
                     </h2>
                     
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                       {/* Main Number */}
                       <div className="text-center md:text-left">
                         <div className="text-7xl font-bold bg-gradient-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">
-                          {annualForecast?.full_year_2025_gdp_growth || prediction?.gdp_growth || "4.6"}%
+                          {annualForecast?.full_year_gdp_growth || annualForecast?.full_year_2025_gdp_growth || prediction?.gdp_growth || "4.6"}%
                         </div>
-                        <div className="text-white/50 mt-2">Full Year 2025 Projection</div>
+                        <div className="text-white/50 mt-2">Full Year {forecastYear} Projection</div>
                         {annualForecast?.confidence_interval && (
                           <div className="text-sm text-white/40 mt-1">
                             Range: {annualForecast.confidence_interval.low}% - {annualForecast.confidence_interval.high}%
                           </div>
+                        )}
+                        {annualForecast?.key_theme && (
+                          <div className="text-sm text-amber-400/80 mt-2 italic">&ldquo;{annualForecast.key_theme}&rdquo;</div>
                         )}
                       </div>
                       

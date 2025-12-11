@@ -255,8 +255,8 @@ Create a comprehensive synthesis report in JSON format:
     model: "claude-opus-4.5",
     temperature: 0.3,
     maxTokens: 8000,
-    promptSystem: `You are a quantitative economist at a top-tier research firm. Today is ${getCurrentDate().full}. You make precise, well-reasoned GDP forecasts backed by data.`,
-    promptUser: `Based on this comprehensive analysis, generate detailed GDP growth predictions for China.
+    promptSystem: `You are a quantitative economist at a top-tier research firm. Today is ${getCurrentDate().full}. You make precise GDP forecasts for the UPCOMING YEAR (${getCurrentDate().year + 1}).`,
+    promptUser: `Based on this comprehensive analysis, generate detailed GDP growth predictions for China for ${getCurrentDate().year + 1} (the upcoming year).
 
 SYNTHESIS REPORT:
 {synthesis}
@@ -264,50 +264,57 @@ SYNTHESIS REPORT:
 Provide your GDP forecast in this exact JSON format:
 {
   "forecast_date": "${getCurrentDate().full}",
+  "forecast_year": ${getCurrentDate().year + 1},
   "methodology": "<brief description of forecasting approach>",
   
   "quarterly_forecasts": {
-    "Q1_${getCurrentDate().year}": {
-      "gdp_growth_yoy": <year-over-year growth percent>,
-      "gdp_growth_qoq_saar": <quarter-over-quarter seasonally adjusted annualized>,
-      "confidence_interval": {"low": <>, "high": <>},
-      "key_drivers": ["<main growth drivers>"],
-      "key_risks": ["<main risks>"],
-      "commentary": "<brief quarter outlook>"
+    "Q1_${getCurrentDate().year + 1}": { 
+      "gdp_growth_yoy": <year-over-year percent>, 
+      "key_drivers": ["<driver 1>", "<driver 2>"], 
+      "key_risks": ["<risk 1>", "<risk 2>"],
+      "commentary": "<1-2 sentence outlook>"
     },
-    "Q2_${getCurrentDate().year}": { <same structure> },
-    "Q3_${getCurrentDate().year}": { <same structure> },
-    "Q4_${getCurrentDate().year}": { <same structure> }
+    "Q2_${getCurrentDate().year + 1}": { 
+      "gdp_growth_yoy": <>, 
+      "key_drivers": ["<>"], 
+      "key_risks": ["<>"],
+      "commentary": "<>"
+    },
+    "Q3_${getCurrentDate().year + 1}": { 
+      "gdp_growth_yoy": <>, 
+      "key_drivers": ["<>"], 
+      "key_risks": ["<>"],
+      "commentary": "<>"
+    },
+    "Q4_${getCurrentDate().year + 1}": { 
+      "gdp_growth_yoy": <>, 
+      "key_drivers": ["<>"], 
+      "key_risks": ["<>"],
+      "commentary": "<>"
+    }
   },
   
   "annual_forecast": {
-    "year": ${getCurrentDate().year},
-    "gdp_growth": <full year growth>,
-    "confidence_interval": {"low": <>, "high": <>},
-    "comparison_to_consensus": "<above/in-line/below IMF/World Bank forecasts>",
-    "revision_from_prior": "<if applicable, change from prior forecast>"
+    "year": ${getCurrentDate().year + 1},
+    "full_year_gdp_growth": <full year growth percent>,
+    "confidence_interval": {"low": <lower bound>, "high": <upper bound>},
+    "vs_consensus": "<above/in-line/below IMF/World Bank consensus>",
+    "key_theme": "<one sentence summary of the year>"
   },
   
-  "forward_guidance": {
-    "next_year_preliminary": <${getCurrentDate().year + 1} early estimate>,
-    "medium_term_trajectory": "<3-5 year growth path>",
-    "structural_growth_rate": "<China's potential GDP growth>"
-  },
-  
-  "model_inputs": {
-    "base_effects": "<impact of prior year base>",
-    "policy_assumptions": ["<key policy assumptions>"],
-    "external_assumptions": ["<global economy assumptions>"]
+  "scenario_analysis": {
+    "base_case": { "probability": <percent>, "growth": <>, "description": "<>" },
+    "bull_case": { "probability": <percent>, "growth": <>, "catalysts": ["<>"] },
+    "bear_case": { "probability": <percent>, "growth": <>, "triggers": ["<>"] }
   },
   
   "investment_implications": {
-    "asset_class_views": {
-      "china_equities": "<bullish/neutral/bearish>",
-      "china_bonds": "<view>",
-      "rmb_currency": "<view>"
-    },
-    "sector_recommendations": ["<top sectors>"],
-    "risk_factors_to_monitor": ["<key things to watch>"]
+    "china_equities": "<bullish/neutral/bearish>",
+    "china_bonds": "<view>",
+    "rmb_outlook": "<appreciation/stable/depreciation>",
+    "top_sectors": ["<best performing sectors>"],
+    "avoid_sectors": ["<underperforming sectors>"],
+    "key_risks_to_monitor": ["<things that could change the forecast>"]
   }
 }`,
     confirmed: false,
