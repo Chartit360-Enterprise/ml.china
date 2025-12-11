@@ -211,9 +211,19 @@ export default function AnalyzePage() {
         pipeline.filter((n) => n.type === "ai_process").map((n) => [n.id, { system: n.promptSystem, user: n.promptUser }])
       ),
     };
-    const res = await api.createJob(plan, true);
-    if (res.success && res.job_id) router.push(`/jobs/${res.job_id}`);
-    else setRunning(false);
+    
+    // Step 1: Create job without executing (fast - just DB write)
+    const res = await api.createJob(plan, false);
+    
+    if (res.success && res.job_id) {
+      // Step 2: Fire off async job start (don't wait - avoids Vercel timeout)
+      api.startJobAsync(res.job_id);
+      
+      // Step 3: Navigate immediately - job page will poll for status
+      router.push(`/jobs/${res.job_id}`);
+    } else {
+      setRunning(false);
+    }
   };
 
   const getPromptsForNode = (nodeId: string) => {

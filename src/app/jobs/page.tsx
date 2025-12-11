@@ -22,10 +22,28 @@ export default function JobsPage() {
 
   useEffect(() => {
     api.status().then(setStatus);
-    api.listJobs().then((res) => {
+    
+    const fetchJobs = async () => {
+      const res = await api.listJobs();
       setJobs(res.jobs || []);
       setLoading(false);
-    });
+    };
+    
+    fetchJobs();
+    
+    // Poll every 5 seconds if there are pending/running jobs
+    const interval = setInterval(async () => {
+      const res = await api.listJobs();
+      const jobList = res.jobs || [];
+      setJobs(jobList);
+      
+      // Stop polling if no pending/running jobs
+      if (!jobList.some((j: Job) => j.status === "pending" || j.status === "running")) {
+        clearInterval(interval);
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const formatDate = (dateStr?: string) => {
@@ -39,6 +57,7 @@ export default function JobsPage() {
     switch (s) {
       case "completed": return "✓";
       case "running": return "⟳";
+      case "pending": return "◐";
       case "failed": return "✗";
       default: return "○";
     }
@@ -48,6 +67,7 @@ export default function JobsPage() {
     switch (s) {
       case "completed": return "text-emerald-400";
       case "running": return "text-blue-400 animate-pulse";
+      case "pending": return "text-amber-400 animate-pulse";
       case "failed": return "text-red-400";
       default: return "text-white/40";
     }
@@ -94,7 +114,8 @@ export default function JobsPage() {
                 </p>
                 <ul className="text-white/50 space-y-1 text-xs">
                   <li>• <span className="text-emerald-400">✓ Completed</span> — Analysis finished successfully, click to view results</li>
-                  <li>• <span className="text-blue-400">⟳ Running</span> — Analysis in progress, please wait</li>
+                  <li>• <span className="text-blue-400">⟳ Running</span> — Analysis in progress on AWS</li>
+                  <li>• <span className="text-amber-400">◐ Pending</span> — Job queued, starting soon</li>
                   <li>• <span className="text-red-400">✗ Failed</span> — Something went wrong, check details</li>
                 </ul>
               </div>
@@ -154,9 +175,9 @@ export default function JobsPage() {
         )}
 
         {/* Refresh hint */}
-        {jobs.some(j => j.status === "running") && (
+        {jobs.some(j => j.status === "running" || j.status === "pending") && (
           <div className="mt-4 text-center text-xs text-white/30">
-            Jobs refresh automatically when you view them
+            ⟳ Auto-refreshing every 5 seconds...
           </div>
         )}
       </main>

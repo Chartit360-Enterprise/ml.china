@@ -78,20 +78,38 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [status, setStatus] = useState<{ status?: string; supported_models?: string[] } | null>(null);
 
   useEffect(() => {
+    let startTriggered = false;
+    
     api.status().then(setStatus);
     api.getJob(id).then((res) => {
       setJob(res.job || null);
       setLoading(false);
+      
+      // If job is pending, trigger execution (fallback in case initial fire-and-forget didn't work)
+      if (res.job?.status === "pending" && !startTriggered) {
+        startTriggered = true;
+        api.startJobAsync(id);
+      }
     });
     
-    // Poll if running
+    // Poll if running or pending
     const interval = setInterval(async () => {
       const res = await api.getJob(id);
       if (res.job) {
         setJob(res.job);
-        if (res.job.status !== "running") clearInterval(interval);
+        
+        // If still pending after 2 seconds, try triggering again
+        if (res.job.status === "pending" && !startTriggered) {
+          startTriggered = true;
+          api.startJobAsync(id);
+        }
+        
+        // Stop polling when completed or failed
+        if (res.job.status === "completed" || res.job.status === "failed") {
+          clearInterval(interval);
+        }
       }
-    }, 5000);
+    }, 3000); // Poll every 3 seconds
     return () => clearInterval(interval);
   }, [id]);
 
@@ -170,12 +188,18 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         )}
 
         {/* Status */}
-        {isRunning ? (
+        {(isRunning || job.status === "pending") ? (
           <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center gap-3">
             <div className="w-5 h-5 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
             <div>
-              <div className="font-medium text-blue-400">Analysis in progress</div>
-              <div className="text-xs text-white/40">This usually takes 1-2 minutes. Page will update automatically.</div>
+              <div className="font-medium text-blue-400">
+                {job.status === "pending" ? "Starting analysis..." : "Analysis in progress"}
+              </div>
+              <div className="text-xs text-white/40">
+                {job.status === "pending" 
+                  ? "Job is queued and will start shortly. Running on AWS for reliability."
+                  : "This usually takes 1-2 minutes. Page will update automatically."}
+              </div>
             </div>
           </div>
         ) : job.status === "failed" ? (
