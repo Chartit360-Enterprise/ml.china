@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
+// Use Edge runtime for longer timeout (up to 30s vs 10s for hobby serverless)
+export const runtime = 'edge';
+
+// Increase max duration for Pro/Enterprise plans (hobby is limited to 10s)
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +14,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
-      cache: 'no-store',
+      // Don't cache, and allow longer timeout
     });
     const text = await res.text();
     return new NextResponse(text, {

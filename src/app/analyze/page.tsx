@@ -31,6 +31,17 @@ interface PipelineNode {
   config?: Record<string, unknown>;
 }
 
+// Get current date for prompts
+const getCurrentDate = () => {
+  const now = new Date();
+  return {
+    full: now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    year: now.getFullYear(),
+    month: now.toLocaleDateString('en-US', { month: 'long' }),
+    quarter: `Q${Math.ceil((now.getMonth() + 1) / 3)}`,
+  };
+};
+
 const DEFAULT_PIPELINE: PipelineNode[] = [
   {
     id: "news_fetch",
@@ -40,7 +51,22 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     icon: "📰",
     confirmed: false,
     expanded: false,
-    config: { keywords: ["China GDP", "China economy", "PBOC", "China trade"], time_period_days: 14, max_articles: 30 },
+    config: { 
+      keywords: [
+        "China GDP growth 2025",
+        "China economic outlook",
+        "PBOC monetary policy",
+        "China manufacturing PMI",
+        "China property market",
+        "China trade surplus deficit",
+        "China consumer spending",
+        "China infrastructure investment",
+        "RMB yuan exchange rate",
+        "China tech sector regulation"
+      ], 
+      time_period_days: 14, 
+      max_articles: 50 
+    },
   },
   {
     id: "economic_data",
@@ -50,7 +76,20 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     icon: "📊",
     confirmed: false,
     expanded: false,
-    config: { indicators: ["GDP Growth", "PMI", "Trade Balance"] },
+    config: { 
+      indicators: [
+        "GDP Growth Rate",
+        "Manufacturing PMI",
+        "Services PMI", 
+        "Trade Balance",
+        "CPI Inflation",
+        "PPI",
+        "Industrial Production",
+        "Retail Sales",
+        "Fixed Asset Investment",
+        "Unemployment Rate"
+      ] 
+    },
   },
   {
     id: "sentiment_analysis",
@@ -61,8 +100,34 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     model: "gemini-3-pro-preview",
     temperature: 0.3,
     maxTokens: 8000,
-    promptSystem: "You are an expert economic analyst specializing in China.",
-    promptUser: "Analyze the sentiment of these news articles about China's economy:\n\n{news}\n\nProvide a sentiment score (-1 to 1) and key findings. Return JSON.",
+    promptSystem: `You are an expert economic analyst specializing in China's economy. Today's date is ${getCurrentDate().full}. You provide rigorous, data-driven analysis.`,
+    promptUser: `Analyze the sentiment and implications of these recent news articles about China's economy.
+
+NEWS ARTICLES:
+{news}
+
+Provide a comprehensive sentiment analysis in JSON format:
+{
+  "analysis_date": "${getCurrentDate().full}",
+  "overall_sentiment": {
+    "score": <float from -1 to 1>,
+    "label": "<very bearish/bearish/neutral/bullish/very bullish>",
+    "confidence": "<low/medium/high>"
+  },
+  "key_themes": [
+    {"theme": "<theme>", "sentiment": "<positive/negative/neutral>", "importance": "<high/medium/low>"}
+  ],
+  "market_implications": {
+    "short_term": "<1-3 month outlook>",
+    "medium_term": "<3-12 month outlook>"
+  },
+  "key_quotes": ["<important quotes from articles>"],
+  "data_quality": {
+    "article_count": <number>,
+    "relevance_score": <0-100>,
+    "date_range": "<date range of articles>"
+  }
+}`,
     confirmed: false,
     expanded: false,
   },
@@ -75,8 +140,38 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     model: "claude-opus-4.5",
     temperature: 0.2,
     maxTokens: 8000,
-    promptSystem: "You are an economist analyzing GDP growth factors.",
-    promptUser: "Extract all factors that could impact China's GDP from:\n\n{news}\n\nFor each factor, provide direction and magnitude. Return JSON.",
+    promptSystem: `You are a senior economist at a major investment bank, specializing in China macro analysis. Today is ${getCurrentDate().full}. You identify and quantify economic drivers with precision.`,
+    promptUser: `Based on the following news about China's economy, identify and analyze ALL factors that could impact GDP growth in ${getCurrentDate().year} and ${getCurrentDate().year + 1}.
+
+NEWS DATA:
+{news}
+
+Provide a detailed factor analysis in JSON format:
+{
+  "analysis_date": "${getCurrentDate().full}",
+  "factors": [
+    {
+      "name": "<factor name>",
+      "category": "<fiscal/monetary/trade/property/consumption/investment/external/regulatory>",
+      "direction": "<positive/negative/neutral>",
+      "magnitude": "<high/medium/low>",
+      "gdp_impact_bps": <estimated basis points impact on GDP>,
+      "confidence": "<high/medium/low>",
+      "time_horizon": "<immediate/short-term/medium-term>",
+      "description": "<detailed explanation>",
+      "data_points": ["<supporting evidence from news>"]
+    }
+  ],
+  "net_gdp_impact": {
+    "total_positive_bps": <sum of positive impacts>,
+    "total_negative_bps": <sum of negative impacts>,
+    "net_impact_bps": <net effect>
+  },
+  "structural_vs_cyclical": {
+    "structural_factors": ["<long-term structural issues>"],
+    "cyclical_factors": ["<short-term cyclical factors>"]
+  }
+}`,
     confirmed: false,
     expanded: false,
   },
@@ -89,8 +184,65 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     model: "gemini-3-pro-preview",
     temperature: 0.4,
     maxTokens: 16000,
-    promptSystem: "You synthesize economic data into actionable insights.",
-    promptUser: "Combine these inputs into a comprehensive analysis:\n\nSentiment: {sentiment}\nFactors: {factors}\nEconomic Data: {economic_data}\n\nProvide executive summary, scenarios, and risks.",
+    promptSystem: `You are the Chief Economist preparing a comprehensive China outlook report. Today is ${getCurrentDate().full}. Synthesize all available data into actionable insights.`,
+    promptUser: `Synthesize the following inputs into a comprehensive China economic assessment report.
+
+SENTIMENT ANALYSIS:
+{sentiment_analysis}
+
+FACTOR ANALYSIS:
+{factor_extraction}
+
+ECONOMIC INDICATORS:
+{economic_data}
+
+Create a comprehensive synthesis report in JSON format:
+{
+  "report_date": "${getCurrentDate().full}",
+  "executive_summary": "<2-3 paragraph executive summary>",
+  "economic_health_score": <1-100 score>,
+  "growth_trajectory": "<accelerating/stable/decelerating/contracting>",
+  
+  "key_findings": [
+    {"finding": "<key finding>", "implication": "<what it means for GDP>", "confidence": "<high/medium/low>"}
+  ],
+  
+  "scenario_analysis": {
+    "base_case": {
+      "probability": <percent>,
+      "gdp_growth": "<expected growth>",
+      "description": "<scenario description>",
+      "key_assumptions": ["<assumptions>"]
+    },
+    "bull_case": {
+      "probability": <percent>,
+      "gdp_growth": "<upside growth>",
+      "description": "<what would need to happen>",
+      "catalysts": ["<positive catalysts>"]
+    },
+    "bear_case": {
+      "probability": <percent>,
+      "gdp_growth": "<downside growth>",
+      "description": "<risk scenario>",
+      "triggers": ["<negative triggers>"]
+    }
+  },
+  
+  "risk_matrix": [
+    {"risk": "<risk>", "probability": "<high/medium/low>", "impact": "<high/medium/low>", "mitigation": "<how China might address>"}
+  ],
+  
+  "policy_outlook": {
+    "monetary_policy": "<expected PBOC actions>",
+    "fiscal_policy": "<expected government spending/stimulus>",
+    "regulatory": "<key regulatory changes expected>"
+  },
+  
+  "sector_impacts": {
+    "winners": ["<sectors that will benefit>"],
+    "losers": ["<sectors that will struggle>"]
+  }
+}`,
     confirmed: false,
     expanded: false,
   },
@@ -103,8 +255,61 @@ const DEFAULT_PIPELINE: PipelineNode[] = [
     model: "claude-opus-4.5",
     temperature: 0.3,
     maxTokens: 8000,
-    promptSystem: "You are a quantitative economist making GDP forecasts.",
-    promptUser: "Based on this analysis:\n\n{synthesis}\n\nPredict China's Q1-Q4 2025 GDP growth. Include point estimates, confidence intervals, and key assumptions. Return JSON.",
+    promptSystem: `You are a quantitative economist at a top-tier research firm. Today is ${getCurrentDate().full}. You make precise, well-reasoned GDP forecasts backed by data.`,
+    promptUser: `Based on this comprehensive analysis, generate detailed GDP growth predictions for China.
+
+SYNTHESIS REPORT:
+{synthesis}
+
+Provide your GDP forecast in this exact JSON format:
+{
+  "forecast_date": "${getCurrentDate().full}",
+  "methodology": "<brief description of forecasting approach>",
+  
+  "quarterly_forecasts": {
+    "Q1_${getCurrentDate().year}": {
+      "gdp_growth_yoy": <year-over-year growth percent>,
+      "gdp_growth_qoq_saar": <quarter-over-quarter seasonally adjusted annualized>,
+      "confidence_interval": {"low": <>, "high": <>},
+      "key_drivers": ["<main growth drivers>"],
+      "key_risks": ["<main risks>"],
+      "commentary": "<brief quarter outlook>"
+    },
+    "Q2_${getCurrentDate().year}": { <same structure> },
+    "Q3_${getCurrentDate().year}": { <same structure> },
+    "Q4_${getCurrentDate().year}": { <same structure> }
+  },
+  
+  "annual_forecast": {
+    "year": ${getCurrentDate().year},
+    "gdp_growth": <full year growth>,
+    "confidence_interval": {"low": <>, "high": <>},
+    "comparison_to_consensus": "<above/in-line/below IMF/World Bank forecasts>",
+    "revision_from_prior": "<if applicable, change from prior forecast>"
+  },
+  
+  "forward_guidance": {
+    "next_year_preliminary": <${getCurrentDate().year + 1} early estimate>,
+    "medium_term_trajectory": "<3-5 year growth path>",
+    "structural_growth_rate": "<China's potential GDP growth>"
+  },
+  
+  "model_inputs": {
+    "base_effects": "<impact of prior year base>",
+    "policy_assumptions": ["<key policy assumptions>"],
+    "external_assumptions": ["<global economy assumptions>"]
+  },
+  
+  "investment_implications": {
+    "asset_class_views": {
+      "china_equities": "<bullish/neutral/bearish>",
+      "china_bonds": "<view>",
+      "rmb_currency": "<view>"
+    },
+    "sector_recommendations": ["<top sectors>"],
+    "risk_factors_to_monitor": ["<key things to watch>"]
+  }
+}`,
     confirmed: false,
     expanded: false,
   },
@@ -186,11 +391,40 @@ export default function AnalyzePage() {
     setSavingPrompt(null);
   };
 
+  const [fetchingData, setFetchingData] = useState(false);
+  const [realData, setRealData] = useState<{ summary?: string; news?: unknown; fred?: unknown; metals?: unknown } | null>(null);
+
   const runAnalysis = async () => {
     setRunning(true);
+    setFetchingData(true);
+
+    // Step 1: Fetch real data from our APIs
+    let dataContext = "";
+    try {
+      const dataRes = await fetch("/api/data/all");
+      const data = await dataRes.json();
+      if (data.success && data.summary) {
+        dataContext = data.summary;
+        setRealData(data.data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch real data:", e);
+    }
+    setFetchingData(false);
+
+    // Step 2: Inject real data into prompts
+    const enhancedPipeline = pipeline.map((node) => {
+      if (node.type === "ai_process" && dataContext) {
+        // Add real data context to each AI prompt
+        const enhancedPromptUser = node.promptUser + `\n\n---\nREAL-TIME DATA CONTEXT:\n${dataContext}`;
+        return { ...node, promptUser: enhancedPromptUser };
+      }
+      return node;
+    });
+
     const plan = {
-      name: "Analysis",
-      nodes: pipeline.map((node, idx) => ({
+      name: `Analysis ${new Date().toLocaleDateString()}`,
+      nodes: enhancedPipeline.map((node, idx) => ({
         id: node.id,
         type: node.type,
         order: idx + 1,
@@ -208,22 +442,28 @@ export default function AnalyzePage() {
         }),
       })),
       prompts: Object.fromEntries(
-        pipeline.filter((n) => n.type === "ai_process").map((n) => [n.id, { system: n.promptSystem, user: n.promptUser }])
+        enhancedPipeline.filter((n) => n.type === "ai_process").map((n) => [n.id, { system: n.promptSystem, user: n.promptUser }])
       ),
+      // Include real data in plan metadata
+      real_data: realData ? {
+        fetched_at: new Date().toISOString(),
+        has_news: !!realData.news,
+        has_fred: !!realData.fred,
+        has_metals: !!realData.metals,
+      } : null,
     };
     
-    // Step 1: Create job without executing (fast - just DB write)
-    const res = await api.createJob(plan, false);
+    // Fire the job creation request - don't wait for response (avoids Vercel timeout)
+    const endpoint = "/api/proxy";
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ operation: "create_job", plan, execute: true }),
+      keepalive: true,
+    }).catch(() => {}); // Ignore errors - we're navigating away
     
-    if (res.success && res.job_id) {
-      // Step 2: Fire off async job start (don't wait - avoids Vercel timeout)
-      api.startJobAsync(res.job_id);
-      
-      // Step 3: Navigate immediately - job page will poll for status
-      router.push(`/jobs/${res.job_id}`);
-    } else {
-      setRunning(false);
-    }
+    // Navigate immediately to jobs list - polling will pick up the job
+    router.push(`/jobs?submitted=true`);
   };
 
   const getPromptsForNode = (nodeId: string) => {
@@ -605,10 +845,10 @@ export default function AnalyzePage() {
             {running ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Starting Analysis...
+                {fetchingData ? "📡 Fetching Real-Time Data..." : "🚀 Starting Analysis..."}
               </span>
             ) : allConfirmed ? (
-              "🚀 Run Analysis"
+              "🚀 Run Analysis (with Live Data)"
             ) : (
               `Confirm all ${pipeline.length} steps to run`
             )}

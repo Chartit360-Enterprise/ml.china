@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
@@ -12,39 +13,59 @@ interface Job {
   config?: {
     name?: string;
   };
+  plan?: {
+    name?: string;
+  };
 }
 
 export default function JobsPage() {
+  const searchParams = useSearchParams();
+  const justSubmitted = searchParams.get("submitted") === "true";
+  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(true);
+  const [showSubmittedBanner, setShowSubmittedBanner] = useState(justSubmitted);
   const [status, setStatus] = useState<{ status?: string; supported_models?: string[] } | null>(null);
+  const [pollCount, setPollCount] = useState(0);
 
   useEffect(() => {
     api.status().then(setStatus);
     
+    // Sort jobs by created_at descending (newest first)
+    const sortJobs = (jobs: Job[]) => 
+      [...jobs].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    
     const fetchJobs = async () => {
-      const res = await api.listJobs();
-      setJobs(res.jobs || []);
+      const res = await api.listJobs(50); // Get more jobs
+      setJobs(sortJobs(res.jobs || []));
       setLoading(false);
     };
     
     fetchJobs();
     
-    // Poll every 5 seconds if there are pending/running jobs
+    // Poll aggressively - every 3 seconds when just submitted, else every 5 seconds
+    const pollInterval = justSubmitted ? 3000 : 5000;
+    
     const interval = setInterval(async () => {
-      const res = await api.listJobs();
-      const jobList = res.jobs || [];
+      const res = await api.listJobs(50);
+      const jobList = sortJobs(res.jobs || []);
       setJobs(jobList);
+      setPollCount(c => c + 1);
       
-      // Stop polling if no pending/running jobs
-      if (!jobList.some((j: Job) => j.status === "pending" || j.status === "running")) {
+      // Hide submitted banner once we see a new running/completed job or after 30 seconds
+      if (showSubmittedBanner && pollCount > 10) {
+        setShowSubmittedBanner(false);
+      }
+      
+      // Stop aggressive polling after job appears or 2 minutes
+      if (pollCount > 40 && !jobList.some((j: Job) => j.status === "pending" || j.status === "running")) {
         clearInterval(interval);
       }
-    }, 5000);
+    }, pollInterval);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [justSubmitted, showSubmittedBanner, pollCount]);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
@@ -123,10 +144,34 @@ export default function JobsPage() {
           </div>
         )}
 
+        {/* Job Submitted Banner */}
+        {showSubmittedBanner && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+              <div>
+                <div className="font-medium text-amber-400">Analysis submitted!</div>
+                <div className="text-xs text-white/50">
+                  Your job is being processed on AWS. It will appear here in 1-2 minutes.
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSubmittedBanner(false)}
+                className="ml-auto text-white/30 hover:text-white/60 text-lg"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Database Status */}
         <div className="mb-6 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-emerald-400">{jobs.length} jobs saved in database</span>
+          <span className="text-xs text-emerald-400">{jobs.length} jobs in database</span>
+          {(showSubmittedBanner || jobs.some(j => j.status === "running" || j.status === "pending")) && (
+            <span className="text-xs text-white/30 ml-auto">⟳ Polling...</span>
+          )}
         </div>
 
         {loading ? (

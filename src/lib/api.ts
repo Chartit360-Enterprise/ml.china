@@ -22,34 +22,11 @@ export const api = {
   listModels: () => callAPI({ operation: "list_models" }),
 
   // Jobs
-  createJob: (plan?: object, execute = false) =>
+  createJob: (plan?: object, execute = true) =>
     callAPI({ operation: "create_job", plan, execute }),
   getJob: (job_id: string) => callAPI({ operation: "get_job", job_id }),
   listJobs: (limit = 50) => callAPI({ operation: "list_jobs", limit }),
   
-  // Start job async - fire and forget, we don't wait for completion
-  startJobAsync: (job_id: string) => {
-    // Use beacon or fetch without awaiting to avoid Vercel timeout
-    const endpoint = process.env.NEXT_PUBLIC_API_BASE || "/api/proxy";
-    const payload = JSON.stringify({ operation: "start_job", job_id });
-    
-    // Try sendBeacon first (fire and forget, survives navigation)
-    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon(endpoint, blob);
-      return Promise.resolve({ sent: true });
-    }
-    
-    // Fallback: fetch with keepalive (also fire and forget)
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-      keepalive: true,
-    }).catch(() => {}); // Ignore errors - we're navigating away anyway
-    
-    return Promise.resolve({ sent: true });
-  },
 
   // Configs
   saveConfig: (config: object) => callAPI({ operation: "save_config", config }),
