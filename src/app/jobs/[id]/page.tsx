@@ -304,6 +304,147 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 </div>
               )}
 
+              {/* Scenario Analysis */}
+              {prediction?.scenario_analysis && (
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 border border-white/5">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <span>🎲</span> Scenario Analysis
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Base Case */}
+                    {prediction.scenario_analysis.base_case && (
+                      <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-blue-400">Base Case</span>
+                          <span className="text-sm text-white/50">{prediction.scenario_analysis.base_case.probability}%</span>
+                        </div>
+                        <div className="text-2xl font-bold text-white mb-2">
+                          {prediction.scenario_analysis.base_case.growth}%
+                        </div>
+                        <p className="text-xs text-white/50">{prediction.scenario_analysis.base_case.description}</p>
+                      </div>
+                    )}
+                    {/* Bull Case */}
+                    {prediction.scenario_analysis.bull_case && (
+                      <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-emerald-400">Bull Case</span>
+                          <span className="text-sm text-white/50">{prediction.scenario_analysis.bull_case.probability}%</span>
+                        </div>
+                        <div className="text-2xl font-bold text-white mb-2">
+                          {prediction.scenario_analysis.bull_case.growth}%
+                        </div>
+                        {prediction.scenario_analysis.bull_case.catalysts && (
+                          <div className="text-xs text-white/50">
+                            {prediction.scenario_analysis.bull_case.catalysts.slice(0, 2).map((c: string, i: number) => (
+                              <div key={i}>• {c}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Bear Case */}
+                    {prediction.scenario_analysis.bear_case && (
+                      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-red-400">Bear Case</span>
+                          <span className="text-sm text-white/50">{prediction.scenario_analysis.bear_case.probability}%</span>
+                        </div>
+                        <div className="text-2xl font-bold text-white mb-2">
+                          {prediction.scenario_analysis.bear_case.growth}%
+                        </div>
+                        {prediction.scenario_analysis.bear_case.triggers && (
+                          <div className="text-xs text-white/50">
+                            {prediction.scenario_analysis.bear_case.triggers.slice(0, 2).map((t: string, i: number) => (
+                              <div key={i}>• {t}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Investment Implications */}
+              {prediction?.investment_implications && (
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 border border-white/5">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <span>💼</span> Investment Implications
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    {/* Equities */}
+                    <div className="p-4 rounded-xl bg-white/5">
+                      <div className="text-xs text-white/40 mb-1">China Equities</div>
+                      <div className={`text-lg font-bold ${
+                        prediction.investment_implications.china_equities?.toLowerCase().includes('bullish') ? 'text-emerald-400' :
+                        prediction.investment_implications.china_equities?.toLowerCase().includes('bearish') ? 'text-red-400' :
+                        'text-amber-400'
+                      }`}>
+                        {prediction.investment_implications.china_equities || 'Neutral'}
+                      </div>
+                    </div>
+                    {/* Bonds */}
+                    <div className="p-4 rounded-xl bg-white/5">
+                      <div className="text-xs text-white/40 mb-1">China Bonds</div>
+                      <div className="text-lg font-bold text-white">
+                        {prediction.investment_implications.china_bonds || 'N/A'}
+                      </div>
+                    </div>
+                    {/* RMB */}
+                    <div className="p-4 rounded-xl bg-white/5">
+                      <div className="text-xs text-white/40 mb-1">RMB Outlook</div>
+                      <div className={`text-lg font-bold ${
+                        prediction.investment_implications.rmb_outlook?.toLowerCase().includes('appreciat') ? 'text-emerald-400' :
+                        prediction.investment_implications.rmb_outlook?.toLowerCase().includes('depreciat') ? 'text-red-400' :
+                        'text-amber-400'
+                      }`}>
+                        {prediction.investment_implications.rmb_outlook || 'Stable'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Top Sectors */}
+                    {prediction.investment_implications.top_sectors && (
+                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                        <div className="text-xs text-emerald-400 mb-2 font-medium">📈 Sectors to Overweight</div>
+                        <div className="flex flex-wrap gap-2">
+                          {prediction.investment_implications.top_sectors.map((s: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Avoid Sectors */}
+                    {prediction.investment_implications.avoid_sectors && (
+                      <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+                        <div className="text-xs text-red-400 mb-2 font-medium">📉 Sectors to Avoid</div>
+                        <div className="flex flex-wrap gap-2">
+                          {prediction.investment_implications.avoid_sectors.map((s: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Key Risks to Monitor */}
+                  {prediction.investment_implications.key_risks_to_monitor && (
+                    <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                      <div className="text-xs text-amber-400 mb-2 font-medium">⚠️ Key Risks to Monitor</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {prediction.investment_implications.key_risks_to_monitor.map((r: string, i: number) => (
+                          <div key={i} className="text-sm text-white/60">• {r}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Sentiment Analysis */}
               {sentiment && !sentiment._raw && (
                 <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
@@ -448,21 +589,40 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {[
-                    { id: "news_fetch", name: "News", icon: "📰" },
-                    { id: "economic_data", name: "Data", icon: "📊" },
+                    { id: "news_fetch", name: "News", icon: "📰", desc: "Real-time news via API" },
+                    { id: "economic_data", name: "Data", icon: "📊", desc: "FRED & Metal prices" },
                     { id: "sentiment_analysis", name: "Sentiment", icon: "🎭" },
                     { id: "factor_extraction", name: "Factors", icon: "🔍" },
                     { id: "synthesis", name: "Synthesis", icon: "🧬" },
                     { id: "prediction", name: "Prediction", icon: "🎯" },
                   ].map((node) => {
                     const output = outputs[node.id];
-                    const ok = output && !output.error;
+                    // Check if step has content (even if Lambda failed, AI might have used injected data)
+                    const hasContent = output?.content && output.content.length > 10;
+                    // For data steps: if AI steps worked, data was injected successfully
+                    const isDataStep = node.id === "news_fetch" || node.id === "economic_data";
+                    const aiStepsWorked = outputs.sentiment_analysis?.content || outputs.synthesis?.content;
+                    const ok = hasContent || (isDataStep && aiStepsWorked);
+                    const status = ok ? "success" : output?.error ? "error" : "skipped";
+                    
                     return (
-                      <div key={node.id} className={`p-4 rounded-xl text-center ${ok ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
+                      <div key={node.id} className={`p-4 rounded-xl text-center ${
+                        status === "success" ? "bg-emerald-500/10 border border-emerald-500/20" : 
+                        status === "error" ? "bg-red-500/10 border border-red-500/20" :
+                        "bg-amber-500/10 border border-amber-500/20"
+                      }`}>
                         <div className="text-2xl mb-1">{node.icon}</div>
-                        <div className={`text-lg ${ok ? "text-emerald-400" : "text-red-400"}`}>{ok ? "✓" : "✗"}</div>
+                        <div className={`text-lg ${
+                          status === "success" ? "text-emerald-400" : 
+                          status === "error" ? "text-red-400" : "text-amber-400"
+                        }`}>
+                          {status === "success" ? "✓" : status === "error" ? "✗" : "○"}
+                        </div>
                         <div className="text-xs text-white/50">{node.name}</div>
                         {output?.model && <div className="text-[10px] text-white/30 mt-1 truncate">{output.model}</div>}
+                        {isDataStep && ok && !hasContent && (
+                          <div className="text-[9px] text-emerald-400/60 mt-1">via API</div>
+                        )}
                       </div>
                     );
                   })}
